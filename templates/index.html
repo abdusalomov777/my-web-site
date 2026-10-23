@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anonim savol-javob</title>
+<meta name="description" content="Do'stlaringiz sizga ismsiz savol yozsin. Xabarlar Telegram botingizga tushadi.">
+<meta name="theme-color" content="#0b0a1a">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: {
+    display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+    sans: ['Manrope', 'system-ui', 'sans-serif'] } } } }
+</script>
+<style>
+  :root { --ink:#0b0a1a; --violet:#8b5cf6; --pink:#ec4899; --cyan:#22d3ee; --amber:#fbbf24; }
+  html, body { min-height: 100%; }
+  body { background: var(--ink); color:#f4f2ff; font-family: Manrope, system-ui, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .bg-blobs { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--ink); }
+  .bg-blobs i { position: absolute; border-radius: 50%; filter: blur(110px); opacity: .5; animation: drift 18s ease-in-out infinite alternate; }
+  .bg-blobs i:nth-child(1) { width: 520px; height: 520px; background: #6d28d9; top: -180px; left: -140px; }
+  .bg-blobs i:nth-child(2) { width: 460px; height: 460px; background: #be185d; bottom: -160px; right: -120px; animation-delay: -6s; }
+  .bg-blobs i:nth-child(3) { width: 320px; height: 320px; background: #0891b2; top: 40%; left: 55%; opacity: .2; animation-delay: -11s; }
+  @keyframes drift { to { transform: translate(60px, -40px) scale(1.08); } }
+  .glass { background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+    border: 1px solid rgba(255,255,255,.12); box-shadow: 0 10px 40px -12px rgba(0,0,0,.5);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-radius: 24px; }
+  .glass-soft { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; }
+  .lift { transition: transform .2s, border-color .2s; } .lift:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.22); }
+  .grad-text { background: linear-gradient(100deg, #c4b5fd, #f0abfc 45%, #f9a8d4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; font-weight:700;
+    border-radius: 14px; padding: .75rem 1.15rem; transition: transform .15s, background .2s, opacity .2s, box-shadow .2s; cursor:pointer; white-space: nowrap; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: linear-gradient(135deg, var(--violet), var(--pink)); color:#fff; box-shadow: 0 8px 24px -8px rgba(236,72,153,.6); }
+  .btn-primary:hover { box-shadow: 0 12px 30px -8px rgba(236,72,153,.75); }
+  .btn-ghost { background: rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#f4f2ff; }
+  .btn-ghost:hover { background: rgba(255,255,255,.13); }
+  .btn-danger { background: rgba(244,63,94,.12); border:1px solid rgba(244,63,94,.35); color:#fda4af; }
+  .btn-sm { padding: .45rem .8rem; font-size: .8rem; border-radius: 11px; }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  input, textarea { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#fff;
+    border-radius: 14px; padding: .7rem .9rem; width:100%; }
+  input:focus, textarea:focus { outline: 2px solid rgba(139,92,246,.6); outline-offset: 0; }
+  input::placeholder, textarea::placeholder { color: rgba(244,242,255,.4); }
+  .dot-new { width:9px; height:9px; border-radius:50%; background: var(--pink); box-shadow: 0 0 0 4px rgba(236,72,153,.25); flex-shrink:0; }
+  .pill { font-size:.72rem; font-weight:700; padding:.25rem .65rem; border-radius:999px; border:1px solid; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px);
+    background: #1f1b3a; border:1px solid rgba(255,255,255,.16); padding:.7rem 1.1rem; border-radius: 14px;
+    opacity: 0; pointer-events: none; transition: .25s; z-index: 60; max-width: 90vw; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .msg-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.12), rgba(255,255,255,.05)); background-size: 200% 100%; animation: shine 1.4s infinite; border-radius: 18px; }
+  @keyframes shine { to { background-position: -200% 0; } }
+  .step-no { width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:"Bricolage Grotesque",system-ui; font-weight:800; background: linear-gradient(135deg, rgba(139,92,246,.35), rgba(236,72,153,.35)); border:1px solid rgba(255,255,255,.18); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="bg-blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<!-- ===================== KIRISH ===================== -->
+<main id="view-login" class="hidden min-h-screen">
+  <div class="max-w-5xl mx-auto px-5 pt-6 flex items-center justify-between">
+    <div class="font-display font-extrabold text-xl tracking-tight">Anonim<span class="grad-text">.</span></div>
+    <a href="/auth/login" class="btn btn-ghost btn-sm">Kirish</a>
+  </div>
+
+  <section class="max-w-5xl mx-auto px-5 pt-14 pb-10 sm:pt-24 grid lg:grid-cols-2 gap-10 items-center">
+    <div>
+      <span class="pill border-violet-400/40 bg-violet-400/10 text-violet-200">🔒 Ismsiz · Telegram orqali</span>
+      <h1 class="mt-5 font-display font-extrabold text-5xl sm:text-6xl leading-[1.02] tracking-tight">
+        Eshitgan, lekin <span class="grad-text">hech kim bilmaydigan</span> savollar
+      </h1>
+      <p class="mt-5 text-lg text-white/70 max-w-md">Havolangni ulashing, do'stlaringiz ismsiz yozadi. Xabarlar to'g'ri Telegram botingizga tushadi, javob ham shu yerdan ketadi.</p>
+
+      <div id="login-error" class="hidden mt-5 glass-soft p-3 text-sm text-rose-300"></div>
+
+      <div class="mt-8 flex flex-col sm:flex-row gap-3">
+        <a href="/auth/login" class="btn btn-primary text-base py-3.5 sm:px-7">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
+          Google orqali boshlash
+        </a>
+        <div id="apk-login-wrap" class="hidden"><a href="/download/apk" class="btn btn-ghost text-base py-3.5 w-full sm:w-auto">📲 Android ilova (APK)</a></div>
+      </div>
+      <p class="mt-3 text-xs text-white/45">Bepul. Ro'yxatdan o'tish bir daqiqa.</p>
+    </div>
+
+    <!-- Mockup: xabar kartasi -->
+    <div class="relative hidden sm:block">
+      <div class="glass p-6 rotate-2 shadow-2xl">
+        <div class="text-xs text-white/50 mb-3">Telegram bot · hozir</div>
+        <div class="glass-soft p-4">
+          <p class="text-[17px] leading-relaxed">Sen haqiqatan ham shunchalik xotirjammisan, yoki shunchaki ko'rsatasanmi?</p>
+          <div class="mt-3 text-xs text-white/50">Qurilma: iPhone (Safari) · Hudud: Tashkent (Asia)</div>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <span class="btn btn-ghost btn-sm">💬 Javob berish</span>
+          <span class="btn btn-ghost btn-sm">🚫 Bloklash</span>
+        </div>
+      </div>
+      <div class="glass p-4 -mt-6 ml-10 -rotate-3 w-64">
+        <p class="text-sm text-white/80">Javobing saytda ko'rindi ✅</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-5xl mx-auto px-5 pb-16">
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="glass lift p-6">
+        <div class="step-no">1</div>
+        <h3 class="font-display font-bold text-lg mt-4">Google bilan kirasiz</h3>
+        <p class="text-sm text-white/65 mt-1">Shaxsiy havolang tayyor bo'ladi: <span class="text-white/85">/u/sening_nomingiz</span></p>
+      </div>
+      <div class="glass lift p-6">
+        <div class="step-no">2</div>
+        <h3 class="font-display font-bold text-lg mt-4">Botni ulaysiz</h3>
+        <p class="text-sm text-white/65 mt-1">Bir bosishda Telegram botni ulang. Xabarlar zudlik bilan shu yerga keladi.</p>
+      </div>
+      <div class="glass lift p-6">
+        <div class="step-no">3</div>
+        <h3 class="font-display font-bold text-lg mt-4">Ulashasiz</h3>
+        <p class="text-sm text-white/65 mt-1">Havolani Story, bio yoki QR kod orqali tarqating. Javoblar ikki tomonlama ishlaydi.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== KABINET ===================== -->
+<div id="view-dash" class="hidden">
+  <header class="max-w-3xl mx-auto px-5 pt-6 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3 min-w-0">
+      <img id="avatar" alt="" class="w-11 h-11 rounded-full border border-white/20 object-cover bg-white/10" referrerpolicy="no-referrer">
+      <div class="min-w-0">
+        <div id="name" class="font-display font-bold text-lg truncate"></div>
+        <div id="email" class="text-xs text-white/50 truncate"></div>
+      </div>
+    </div>
+    <a href="/auth/logout" class="btn btn-ghost btn-sm">Chiqish</a>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-5 py-6 space-y-5">
+    <!-- Havola -->
+    <section class="glass p-5 sm:p-7 relative overflow-hidden">
+      <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-pink-500/20 blur-3xl pointer-events-none"></div>
+      <h2 class="font-display font-bold text-2xl relative">Sening <span class="grad-text">havolang</span></h2>
+      <p class="text-sm text-white/60 mt-1 relative">Shuni Story, bio yoki guruhlarga joylashtir. Kim yozsa, xabar sening botingga tushadi.</p>
+      <div class="mt-5 flex flex-col sm:flex-row gap-2 relative">
+        <input id="profile-url" readonly aria-label="Profil havolasi" class="font-semibold text-[15px]">
+        <div class="flex gap-2 shrink-0">
+          <button id="copy-link" class="btn btn-primary flex-1 sm:flex-none">Nusxa olish</button>
+          <button id="share-link" class="btn btn-ghost flex-1 sm:flex-none">Ulashish</button>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2 relative">
+        <button id="qr-toggle" class="btn btn-ghost btn-sm">📱 QR kodni ko'rsatish</button>
+        <a id="open-profile" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Sahifani ochish ↗</a>
+      </div>
+      <div id="qr-box" class="hidden mt-4 flex flex-col sm:flex-row items-center gap-4 glass-soft p-4">
+        <img id="qr-img" alt="Havola QR kodi" width="180" height="180" class="rounded-xl bg-white p-1 w-44 h-44 shrink-0">
+        <div class="text-sm text-white/70">
+          <p>Telefon kamerasida skanerlansa, to'g'ridan-to'g'ri sahifangiz ochiladi.</p>
+          <button id="qr-download" class="btn btn-ghost btn-sm mt-3">QR ni yuklab olish</button>
+        </div>
+      </div>
+      <details class="mt-5 text-sm relative">
+        <summary class="cursor-pointer text-white/70 hover:text-white">Username ni o'zgartirish</summary>
+        <div class="mt-3 flex gap-2">
+          <input id="username-input" maxlength="20" placeholder="yangi_username" aria-label="Username">
+          <button id="username-save" class="btn btn-ghost shrink-0">Saqlash</button>
+        </div>
+        <p class="text-xs text-white/45 mt-2">3–20 belgi: kichik harflar, raqamlar va _ . Eski havola ishlamay qoladi.</p>
+      </details>
+    </section>
+
+    <!-- Telegram -->
+    <section class="glass p-5 sm:p-6">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h2 class="font-display font-bold text-xl">Telegram bot</h2>
+          <p id="tg-status" class="text-sm mt-1 text-white/65"></p>
+        </div>
+        <span id="tg-badge" class="pill shrink-0"></span>
+      </div>
+      <div id="tg-actions" class="mt-4 flex flex-wrap gap-2"></div>
+    </section>
+
+    <!-- APK -->
+    <section id="apk-card" class="hidden glass p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-400/15 border border-emerald-400/30 flex items-center justify-center text-2xl shrink-0">📲</div>
+        <div>
+          <h2 class="font-display font-bold text-xl">Android ilova</h2>
+          <p class="text-sm text-white/60">APK faylni yuklab olib, telefoningizga o'rnating. Botdan ham olish mumkin.</p>
+        </div>
+      </div>
+      <a href="/download/apk" class="btn btn-primary shrink-0">APK yuklab olish</a>
+    </section>
+
+    <!-- Xabarlar -->
+    <section>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="font-display font-bold text-xl">Kiruvchi xabarlar
+          <span id="count" class="text-white/50 font-semibold text-base"></span>
+        </h2>
+        <button id="read-all" class="btn btn-ghost btn-sm hidden">Hammasini o'qilgan qil</button>
+      </div>
+      <div id="messages" class="space-y-3" aria-live="polite">
+        <div class="skeleton h-28"></div>
+        <div class="skeleton h-28"></div>
+      </div>
+      <div id="empty" class="hidden glass p-8 text-center">
+        <div class="text-4xl">🌙</div>
+        <p class="mt-3 text-white/75 font-semibold">Hozircha xabar yo'q</p>
+        <p class="text-sm text-white/50 mt-1">Havolangni Story'ga qo'y, birinchi xabar tez orada keladi.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Javob oynasi (saytdan) -->
+<div id="reply-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="reply-title">
+  <div class="glass w-full max-w-md p-5" style="background: rgba(24,20,48,.94)">
+    <h3 id="reply-title" class="font-display font-bold text-lg">Javob yozish</h3>
+    <p id="reply-quote" class="msg-text mt-2 text-sm text-white/60 border-l-2 border-violet-400/60 pl-3 max-h-24 overflow-auto"></p>
+    <textarea id="reply-text" rows="4" maxlength="1000" class="mt-3" placeholder="Javobingni yoz..."></textarea>
+    <div class="mt-3 flex justify-end gap-2">
+      <button id="reply-cancel" class="btn btn-ghost">Bekor qilish</button>
+      <button id="reply-send" class="btn btn-primary">Javobni yuborish</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const AVATAR_FALLBACK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+
+let ME = null;
+let MESSAGES = [];
+let replyTarget = null;
+let pollTimer = null;
+
+// ------------------------------------------------------------ yordamchilar
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch("/api" + path, {
+    credentials: "same-origin",
+    headers: opts.body ? { "Content-Type": "application/json" } : {},
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (res.status === 401) { showLogin(); throw new Error("401"); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+  return data;
+}
+
+function timeAgo(iso) {
+  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "hozir";
+  if (s < 3600) return Math.floor(s / 60) + " daqiqa oldin";
+  if (s < 86400) return Math.floor(s / 3600) + " soat oldin";
+  return new Date(iso).toLocaleDateString("uz-UZ", { day: "numeric", month: "short" });
+}
+
+// ------------------------------------------------------------ ko'rinishlar
+function showLogin() {
+  clearInterval(pollTimer);
+  $("view-dash").classList.add("hidden");
+  $("view-login").classList.remove("hidden");
+  const err = new URLSearchParams(location.search).get("error");
+  if (err) {
+    const box = $("login-error");
+    box.textContent = err === "email"
+      ? "Google emailingiz tasdiqlanmagan. Boshqa akkaunt bilan urinib ko'ring."
+      : "Kirishda xatolik bo'ldi. Qayta urinib ko'ring.";
+    box.classList.remove("hidden");
+  }
+}
+
+function renderMe() {
+  $("view-login").classList.add("hidden");
+  $("view-dash").classList.remove("hidden");
+  $("avatar").src = ME.avatar_url || AVATAR_FALLBACK;
+  $("name").textContent = ME.name;
+  $("email").textContent = ME.email;
+  $("profile-url").value = ME.profile_url;
+  $("open-profile").href = ME.profile_url;
+  $("count").textContent = ME.total ? `(${ME.total})` : "";
+  $("apk-card").classList.toggle("hidden", !ME.apk_available);
+
+  const badge = $("tg-badge"), status = $("tg-status"), actions = $("tg-actions");
+  if (ME.telegram_connected) {
+    badge.textContent = "Ulangan";
+    badge.className = "pill shrink-0 bg-emerald-400/15 text-emerald-300 border-emerald-400/30";
+    status.textContent = "Yangi xabarlar zudlik bilan Telegramingizga keladi. Javoblaringiz ham shu yerdan yuboriladi.";
+    actions.innerHTML = `
+      <a href="${esc(ME.bot_url)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Botni ochish ↗</a>
+      <button id="tg-disconnect" class="btn btn-danger btn-sm">Telegramni uzish</button>`;
+    $("tg-disconnect").onclick = async () => {
+      if (!confirm("Telegram ulanishini uzasizmi? Xabarlar faqat shu kabinetda saqlanadi.")) return;
+      await api("/me/telegram/disconnect", { method: "POST" });
+      toast("Telegram uzildi");
+      await loadMe();
+    };
+  } else {
+    badge.textContent = "Ulanmagan";
+    badge.className = "pill shrink-0 bg-amber-400/15 text-amber-300 border-amber-400/30";
+    status.textContent = "Ulanmaguningizcha xabarlar shu yerda, «Kiruvchi xabarlar» bo'limida saqlanadi.";
+    actions.innerHTML = `<a href="${esc(ME.connect_url)}" target="_blank" rel="noopener" class="btn btn-primary">Telegram Botni ulash</a>
+      <button id="tg-refresh" class="btn btn-ghost">Ulandimi? Tekshirish</button>`;
+    $("tg-refresh").onclick = async () => { await loadMe(); toast(ME.telegram_connected ? "Telegram ulandi!" : "Hali ulanmagan"); };
+  }
+}
+
+function renderMessages() {
+  const box = $("messages");
+  $("empty").classList.toggle("hidden", MESSAGES.length > 0);
+  $("read-all").classList.toggle("hidden", !MESSAGES.some((m) => !m.is_read));
+  box.innerHTML = MESSAGES.map((m) => {
+    const meta = [m.device, m.region].filter(Boolean).map(esc).join(" • ");
+    const replyBlock = m.reply_text
+      ? `<div class="mt-3 border-l-2 border-emerald-400/60 pl-3 text-sm"><div class="text-emerald-300 text-xs font-bold mb-0.5">Sening javobing</div><div class="msg-text text-white/80">${esc(m.reply_text)}</div></div>`
+      : m.wants_reply ? `<div class="mt-3 text-xs text-violet-300 font-semibold">↩️ Yuboruvchi javob kutmoqda</div>` : "";
+    return `
+    <article class="glass lift p-4 sm:p-5" data-id="${m.id}">
+      <div class="flex items-start gap-3">
+        ${m.is_read ? "" : `<span class="dot-new mt-2" title="Yangi"></span>`}
+        <div class="min-w-0 flex-1">
+          <p class="msg-text text-[17px] leading-relaxed">${esc(m.text)}</p>
+          <div class="mt-2 text-xs text-white/50">${esc(timeAgo(m.created_at))}${meta ? " • " + meta : ""}</div>
+          ${replyBlock}
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button class="btn btn-primary btn-sm" data-act="reply">${m.reply_text ? "Javobni tahrirlash" : "Javob yozish"}</button>
+        <button class="btn btn-ghost btn-sm" data-act="story">🖼 Story</button>
+        <button class="btn btn-ghost btn-sm" data-act="${m.blocked ? "unblock" : "block"}">${m.blocked ? "Blokdan chiqarish" : "Bloklash"}</button>
+        <button class="btn btn-danger btn-sm" data-act="delete">O'chirish</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+// ------------------------------------------------------------ ma'lumot yuklash
+async function loadMe() {
+  ME = await api("/me");
+  renderMe();
+}
+async function loadMessages() {
+  MESSAGES = await api("/me/messages");
+  renderMessages();
+}
+async function refresh() {
+  try { await loadMe(); await loadMessages(); } catch (e) { if (e.message !== "401") console.error(e); }
+}
+
+// ------------------------------------------------------------ hodisalar
+$("copy-link").onclick = async () => {
+  try { await navigator.clipboard.writeText(ME.profile_url); }
+  catch { $("profile-url").select(); document.execCommand("copy"); }
+  toast("Havola nusxalandi ✅");
+};
+$("share-link").onclick = async () => {
+  if (navigator.share) { try { await navigator.share({ title: "Menga anonim savol yubor", url: ME.profile_url }); } catch {} }
+  else $("copy-link").click();
+};
+$("qr-toggle").onclick = () => {
+  const box = $("qr-box");
+  const open = box.classList.toggle("hidden") === false;
+  if (open && !$("qr-img").getAttribute("src")) $("qr-img").src = "/api/me/qr.png";
+  $("qr-toggle").textContent = open ? "QR kodni yashirish" : "📱 QR kodni ko'rsatish";
+};
+$("qr-download").onclick = () => {
+  const a = document.createElement("a");
+  a.href = "/api/me/qr.png"; a.download = `qr-${ME.username}.png`;
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$("username-save").onclick = async () => {
+  try {
+    await api("/me/username", { method: "PATCH", body: { username: $("username-input").value } });
+    toast("Username yangilandi");
+    $("username-input").value = "";
+    $("qr-img").removeAttribute("src");
+    await loadMe();
+  } catch (e) { toast(e.message); }
+};
+$("read-all").onclick = async () => { await api("/me/messages/read-all", { method: "POST" }); await refresh(); };
+
+$("messages").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const id = Number(btn.closest("article").dataset.id);
+  const msg = MESSAGES.find((m) => m.id === id);
+  const act = btn.dataset.act;
+  try {
+    if (act === "story") downloadStory(msg.text);
+    else if (act === "reply") openReply(msg);
+    else if (act === "block") { await api(`/me/messages/${id}/block`, { method: "POST" }); toast("Yuboruvchi bloklandi"); await loadMessages(); }
+    else if (act === "unblock") { await api(`/me/messages/${id}/unblock`, { method: "POST" }); toast("Blokdan chiqarildi"); await loadMessages(); }
+    else if (act === "delete") {
+      if (!confirm("Xabarni o'chirasizmi?")) return;
+      await api(`/me/messages/${id}`, { method: "DELETE" });
+      toast("O'chirildi"); await refresh();
+    }
+  } catch (err) { if (err.message !== "401") toast(err.message); }
+});
+
+// Javob oynasi
+function openReply(msg) {
+  replyTarget = msg;
+  $("reply-quote").textContent = msg.text;
+  $("reply-text").value = msg.reply_text || "";
+  const m = $("reply-modal"); m.classList.remove("hidden"); m.classList.add("flex");
+  $("reply-text").focus();
+}
+function closeReply() { const m = $("reply-modal"); m.classList.add("hidden"); m.classList.remove("flex"); replyTarget = null; }
+$("reply-cancel").onclick = closeReply;
+$("reply-modal").addEventListener("click", (e) => { if (e.target.id === "reply-modal") closeReply(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeReply(); });
+$("reply-send").onclick = async () => {
+  const text = $("reply-text").value.trim();
+  if (!text) return toast("Javob yozing");
+  try {
+    await api(`/me/messages/${replyTarget.id}/reply`, { method: "POST", body: { text } });
+    closeReply(); toast("Javob yuborildi ✅"); await loadMessages();
+  } catch (e) { toast(e.message); }
+};
+
+// ------------------------------------------------------------ Story rasm (HTML5 Canvas, 1080x1920)
+function downloadStory(text) {
+  const W = 1080, H = 1920;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+
+  const bg = g.createLinearGradient(0, 0, W * 0.4, H);
+  bg.addColorStop(0, "#180e38"); bg.addColorStop(0.5, "#581c87"); bg.addColorStop(1, "#be2478");
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+
+  const glow = (x, y, r, col) => {
+    const rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, col); rg.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  };
+  glow(180, 450, 520, "rgba(99,102,241,.55)");
+  glow(900, 1450, 560, "rgba(236,72,153,.5)");
+
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
+  const card = { x: 80, y: 420, w: W - 160, h: 980 };
+  rr(card.x, card.y, card.w, card.h, 64);
+  g.fillStyle = "rgba(255,255,255,.16)"; g.fill();
+  g.strokeStyle = "rgba(255,255,255,.42)"; g.lineWidth = 3; g.stroke();
+
+  const FONT = '"Manrope", "Segoe UI", system-ui, sans-serif';
+  g.fillStyle = "rgba(255,255,255,.92)"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = `700 46px ${FONT}`;
+  g.fillText("Menga anonim xabar yuborishdi", W / 2, 300);
+
+  const pad = 70, maxW = card.w - pad * 2, maxH = card.h - pad * 2;
+  const wrap = (size) => {
+    g.font = `800 ${size}px ${FONT}`;
+    const lines = [];
+    for (const para of text.split("\n")) {
+      let cur = "";
+      for (const word of para.split(" ")) {
+        const test = cur ? cur + " " + word : word;
+        if (g.measureText(test).width <= maxW) { cur = test; continue; }
+        if (cur) lines.push(cur);
+        let w = word;
+        while (g.measureText(w).width > maxW && w.length > 1) {
+          let i = w.length; while (i > 1 && g.measureText(w.slice(0, i)).width > maxW) i--;
+          lines.push(w.slice(0, i)); w = w.slice(i);
+        }
+        cur = w;
+      }
+      lines.push(cur);
+    }
+    return lines;
+  };
+  let size = 78, lines = wrap(size);
+  while (size > 34 && lines.length * size * 1.35 > maxH) { size -= 4; lines = wrap(size); }
+  const lh = size * 1.35, maxLines = Math.floor(maxH / lh);
+  if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = lines[maxLines - 1].replace(/.$/, "…"); }
+
+  g.fillStyle = "#fff"; g.textBaseline = "alphabetic";
+  let y = card.y + (card.h - lines.length * lh) / 2 + size;
+  for (const ln of lines) { g.fillText(ln, W / 2, y); y += lh; }
+
+  const label = `Sen ham yoz: /u/${ME.username}`;
+  g.font = `700 44px ${FONT}`; g.textBaseline = "middle";
+  const tw = g.measureText(label).width;
+  rr(W / 2 - tw / 2 - 48, 1530, tw + 96, 100, 50);
+  g.fillStyle = "rgba(255,255,255,.94)"; g.fill();
+  g.fillStyle = "#581c87"; g.fillText(label, W / 2, 1581);
+
+  c.toBlob((blob) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "story.png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Story rasm yuklab olindi");
+  }, "image/png");
+}
+
+// ------------------------------------------------------------ ishga tushirish
+(async function init() {
+  // APK tugmasi (kirish sahifasi uchun, ochiq endpoint)
+  fetch("/api/app").then((r) => r.json()).then((a) => { if (a.apk_available) $("apk-login-wrap").classList.remove("hidden"); }).catch(() => {});
+
+  try {
+    await loadMe();
+    await loadMessages();
+    pollTimer = setInterval(() => { if (!document.hidden) refresh(); }, 15000);
+  } catch (e) {
+    if (e.message === "401") showLogin(); else { console.error(e); showLogin(); }
+  }
+})();
+</script>
+<!-- ================= QO'SHIMCHA: kirish taklifi, ovozlar, ortga tugmasi ================= -->
+<style>
+  #fx-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(6,5,18,.74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fxFade .35s ease both; }
+  #fx-overlay.fx-hide { opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #fx-card { max-width: 420px; width: 100%; padding: 28px 24px; text-align: center; animation: fxPop .45s cubic-bezier(.2,.9,.3,1.2) both; }
+  #fx-card h2 { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 1.6rem; line-height: 1.2; margin: 0 0 .5rem; color: #fff; }
+  #fx-card p { color: rgba(244,242,255,.72); font-size: .95rem; line-height: 1.5; margin: 0 0 1.4rem; }
+  #fx-card .fx-icon { font-size: 2.6rem; margin-bottom: .4rem; animation: fxBob 1.6s ease-in-out infinite; }
+  #fx-card .fx-row { display: flex; flex-direction: column-reverse; gap: .6rem; }
+  @media (min-width: 480px) { #fx-card .fx-row { flex-direction: row; justify-content: center; } }
+  .fx-btn { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .95rem; border-radius: 14px;
+    padding: .8rem 1.2rem; cursor: pointer; border: 1px solid transparent; transition: transform .15s, background .2s, box-shadow .2s; text-decoration: none; color: #fff; }
+  .fx-btn:active { transform: scale(.97); }
+  .fx-primary { background: linear-gradient(135deg, #8b5cf6, #ec4899); box-shadow: 0 10px 26px -10px rgba(236,72,153,.7); }
+  .fx-primary:hover { box-shadow: 0 14px 32px -10px rgba(236,72,153,.85); }
+  .fx-ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); }
+  .fx-ghost:hover { background: rgba(255,255,255,.14); }
+  .fx-dock { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 50; display: flex; gap: .5rem; }
+  .fx-back, .fx-sound { display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .95rem; border-radius: 999px; font-size: .85rem; font-weight: 700;
+    color: #f4f2ff; cursor: pointer; background: rgba(20,17,40,.82); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .15s, background .2s; }
+  .fx-back:hover, .fx-sound:hover { background: rgba(255,255,255,.14); }
+  .fx-back:hover { transform: translateX(-2px); }
+  .fx-back:active, .fx-sound:active { transform: scale(.96); }
+  .fx-sound { padding: .55rem .75rem; }
+  @keyframes fxFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fxPop { from { opacity: 0; transform: scale(.92) translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fxBob { 50% { transform: translateY(-4px); } }
+</style>
+
+<div class="fx-dock">
+  <button type="button" id="fx-back" class="fx-back" aria-label="Ortga">← Ortga</button>
+  <button type="button" id="fx-sound" class="fx-sound" aria-label="Ovozni yoqish yoki o'chirish">🔊</button>
+</div>
+
+<script>
+(function () {
+  var KEY = "anonqa_welcome_v1", SOUND_KEY = "anonqa_sound_off";
+  var ctx = null, welcomePlayed = false, welcomeWanted = false;
+
+  // ---------- sozlamalar ----------
+  function soundOn() { try { return localStorage.getItem(SOUND_KEY) !== "1"; } catch (e) { return true; } }
+  function setSound(on) { try { localStorage.setItem(SOUND_KEY, on ? "0" : "1"); } catch (e) {} }
+  var soundBtn = document.getElementById("fx-sound");
+  function paintSound() { soundBtn.textContent = soundOn() ? "🔊" : "🔇"; soundBtn.title = soundOn() ? "Ovoz yoqilgan" : "Ovoz o'chirilgan"; }
+  if (soundBtn) {
+    paintSound();
+    soundBtn.addEventListener("click", function () { setSound(!soundOn()); paintSound(); });
+  }
+
+  // ---------- ovoz (Web Audio) ----------
+  function audio() {
+    try {
+      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
+  }
+  function tone(freq, dur, type, vol, when) {
+    if (!soundOn()) return;
+    var c = audio(); if (!c) return;
+    var t = c.currentTime + (when || 0);
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function clickSfx() {
+    tone(880, 0.08, "triangle", 0.05, 0);
+    tone(1320, 0.05, "sine", 0.03, 0.02);
+  }
+
+  // ---------- o'zbekcha ovoz ----------
+  function pickVoice() {
+    if (!("speechSynthesis" in window)) return null;
+    var list = speechSynthesis.getVoices() || [];
+    // Avval o'zbek, bo'lmasa o'zbekchaga eng yaqin til (turk) ovozi
+    return list.find(function (v) { return /^uz/i.test(v.lang); })
+        || list.find(function (v) { return /^tr/i.test(v.lang); })
+        || null;
+  }
+  function speak(text) {
+    if (!soundOn() || !("speechSynthesis" in window)) return;
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      var v = pickVoice();
+      u.lang = v ? v.lang : "uz-UZ";
+      if (v) u.voice = v;
+      u.rate = 0.9; u.pitch = 1.05; u.volume = 1;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = function () {};
+
+  function playWelcome() {
+    if (welcomePlayed || !soundOn()) return;
+    var c = audio();
+    if (!c || c.state !== "running") return; // brauzer ruxsat bermagan: foydalanuvchi bosishini kutamiz
+    welcomePlayed = true;
+    tone(523.25, 0.25, "sine", 0.08, 0);
+    tone(659.25, 0.25, "sine", 0.08, 0.15);
+    tone(783.99, 0.45, "sine", 0.08, 0.3);
+    setTimeout(function () { speak("Salom! Saytimizga xush kelibsiz!"); }, 700);
+  }
+
+  // Birinchi foydalanuvchi harakatida ovozni ijro etish (brauzer talabi)
+  function onGesture() {
+    if (!welcomeWanted || welcomePlayed) return;
+    audio();
+    setTimeout(playWelcome, 80);
+  }
+  document.addEventListener("pointerdown", onGesture, true);
+  document.addEventListener("keydown", onGesture, true);
+
+  // Har bir tugma bosilganda sfx
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t && t.closest && t.closest("button, a, .btn, .chip, .switch, [role=button]")) clickSfx();
+  }, true);
+
+  // ---------- ortga tugmasi ----------
+  // Faqat sayt ichidagi oldingi sahifaga qaytadi; tashqaridan kelgan bo'lsa bosh sahifaga
+  function goBack() {
+    var sameSite = false;
+    try { sameSite = !!document.referrer && new URL(document.referrer).host === location.host; } catch (e) {}
+    if (sameSite && history.length > 1) history.back();
+    else location.href = "/";
+  }
+  var back = document.getElementById("fx-back");
+  if (back) back.addEventListener("click", goBack);
+
+  // ---------- birinchi kirish taklifi ----------
+  function seen() { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } }
+  function markSeen() { try { localStorage.setItem(KEY, "1"); } catch (e) {} }
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+  function closeOverlay(ov) {
+    markSeen();
+    ov.classList.add("fx-hide");
+    setTimeout(function () { ov.remove(); }, 260);
+  }
+
+  function stepApk(ui, done) {
+    ui.card.innerHTML = "";
+    ui.card.appendChild(el("div", "fx-icon", "📲"));
+    ui.card.appendChild(el("h2", "", "Saytimizga xush kelibsiz!"));
+    ui.card.appendChild(el("p", "", "Android ilovasini yuklab olasizmi?"));
+    var row = el("div", "fx-row");
+    var no = el("button", "fx-btn fx-ghost", "Yo'q"); no.type = "button";
+    var yes = el("button", "fx-btn fx-primary", "Ha"); yes.type = "button";
+    no.onclick = function () { done(false); };
+    yes.onclick = function () {
+      var f = document.createElement("iframe");
+      f.style.display = "none"; f.src = "/download/apk";
+      document.body.appendChild(f);
+      setTimeout(function () { f.remove(); }, 60000);
+      done(true);
+    };
+    row.appendChild(no); row.appendChild(yes);
+    ui.card.appendChild(row);
+  }
+
+  function stepGoogle(ui, apkTaken) {
+    ui.card.innerHTML = "";
+    ui.card.appendChild(el("div", "fx-icon", "🔐"));
+    ui.card.appendChild(el("h2", "", "Davom etamizmi?"));
+    ui.card.appendChild(el("p", "", apkTaken
+      ? "APK yuklab olindi. Endi Google orqali kirib, o'zingizning anonim havolangizni yarating."
+      : "Google orqali kirib, o'zingizning anonim havolangizni yarating."));
+    var row = el("div", "fx-row");
+    var later = el("button", "fx-btn fx-ghost", "Keyinroq"); later.type = "button";
+    later.onclick = function () { closeOverlay(ui.ov); };
+    var go = el("a", "fx-btn fx-primary", "Google bilan davom etish");
+    go.href = "/auth/login";
+    go.onclick = function () { markSeen(); };
+    row.appendChild(later); row.appendChild(go);
+    ui.card.appendChild(row);
+  }
+
+  function showWelcome(apkOk, loggedIn) {
+    var ov = el("div"); ov.id = "fx-overlay";
+    var card = el("div", "glass"); card.id = "fx-card";
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    var ui = { ov: ov, card: card };
+
+    welcomeWanted = true;
+    playWelcome(); // brauzer ruxsat bersa, darhol ijro etiladi
+
+    if (apkOk) {
+      stepApk(ui, function (downloaded) {
+        if (loggedIn) closeOverlay(ov); else stepGoogle(ui, downloaded);
+      });
+    } else {
+      stepGoogle(ui, false);
+    }
+  }
+
+  function init() {
+    Promise.all([
+      fetch("/api/app").then(function (r) { return r.json(); }).catch(function () { return {}; }),
+      fetch("/me", { credentials: "same-origin" }).then(function (r) { return r.ok; }).catch(function () { return false; })
+    ]).then(function (res) {
+      var apkOk = !!(res[0] && res[0].apk_available);
+      var loggedIn = !!res[1];
+      if (seen()) return;
+      if (!apkOk && loggedIn) return;
+      showWelcome(apkOk, loggedIn);
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+
+</body>
+</html>

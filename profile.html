@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anonim savol yubor</title>
+<meta name="theme-color" content="#0b0a1a">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: {
+    display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+    sans: ['Manrope', 'system-ui', 'sans-serif'] } } } }
+</script>
+<style>
+  :root { --ink:#0b0a1a; --violet:#8b5cf6; --pink:#ec4899; --cyan:#22d3ee; }
+  body { background: var(--ink); color:#f4f2ff; font-family: Manrope, system-ui, sans-serif; min-height:100vh;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .bg-blobs { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--ink); }
+  .bg-blobs i { position:absolute; border-radius:50%; filter: blur(110px); opacity:.5; animation: drift 18s ease-in-out infinite alternate; }
+  .bg-blobs i:nth-child(1) { width:480px; height:480px; background:#6d28d9; top:-160px; left:-140px; }
+  .bg-blobs i:nth-child(2) { width:420px; height:420px; background:#be185d; bottom:-140px; right:-120px; animation-delay:-7s; }
+  @keyframes drift { to { transform: translate(50px, -30px) scale(1.06); } }
+  .glass { background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.12); box-shadow: 0 10px 40px -12px rgba(0,0,0,.5);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-radius: 26px; }
+  .glass-soft { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; }
+  .grad-text { background: linear-gradient(100deg, #c4b5fd, #f0abfc 45%, #f9a8d4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ring { padding: 3px; border-radius: 9999px; background: linear-gradient(135deg, var(--violet), var(--pink)); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; font-weight:700; border-radius:16px;
+    padding:.9rem 1.2rem; transition: transform .15s, opacity .2s, box-shadow .2s; cursor:pointer; }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-primary { background: linear-gradient(135deg, var(--violet), var(--pink)); color:#fff; box-shadow: 0 10px 28px -10px rgba(236,72,153,.7); }
+  .btn-primary:not(:disabled):hover { box-shadow: 0 14px 34px -10px rgba(236,72,153,.85); }
+  .btn-ghost { background: rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#f4f2ff; }
+  .btn-ghost:hover { background: rgba(255,255,255,.13); }
+  :focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+  textarea { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#fff;
+    border-radius:18px; padding:1rem 1.05rem; width:100%; resize:none; font-size:17px; line-height:1.55; transition: border-color .2s, box-shadow .2s; }
+  textarea:focus { outline:none; border-color: rgba(139,92,246,.7); box-shadow: 0 0 0 4px rgba(139,92,246,.18); }
+  textarea::placeholder { color: rgba(244,242,255,.4); }
+  .chip { font-size:.8rem; padding:.42rem .8rem; border-radius:999px; background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12); cursor:pointer; transition: background .2s, transform .15s; }
+  .chip:hover { background: rgba(255,255,255,.15); transform: translateY(-1px); }
+  .switch { position:relative; width:48px; height:28px; flex-shrink:0; }
+  .switch input { position:absolute; opacity:0; inset:0; width:100%; height:100%; cursor:pointer; z-index:2; margin:0; }
+  .switch span { position:absolute; inset:0; background:rgba(255,255,255,.16); border-radius:999px; transition:.2s; }
+  .switch span::after { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:.2s; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .switch input:checked + span { background: linear-gradient(135deg, var(--violet), var(--pink)); }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  .switch input:focus-visible + span { outline:2px solid var(--cyan); outline-offset:2px; }
+  .hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  .msg-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+  .pop { animation: pop .5s cubic-bezier(.2,.9,.3,1.3); } @keyframes pop { from { transform: scale(.4); opacity: 0; } }
+  .toast { position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); transform:translate(-50%,20px);
+    background:#1f1b3a; border:1px solid rgba(255,255,255,.16); padding:.7rem 1.1rem; border-radius:14px; opacity:0;
+    pointer-events:none; transition:.25s; z-index:60; max-width:90vw; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.12), rgba(255,255,255,.05)); background-size:200% 100%; animation: shine 1.4s infinite; border-radius:18px; }
+  @keyframes shine { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="bg-blobs" aria-hidden="true"><i></i><i></i></div>
+
+<main class="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
+  <div class="w-full max-w-md">
+
+    <!-- Yuklanmoqda -->
+    <div id="state-loading" class="space-y-4">
+      <div class="skeleton h-40"></div>
+      <div class="skeleton h-72"></div>
+    </div>
+
+    <!-- Topilmadi -->
+    <div id="state-404" class="hidden glass p-8 text-center">
+      <div class="text-4xl">🔍</div>
+      <h1 class="font-display font-extrabold text-3xl mt-3">Profil topilmadi</h1>
+      <p class="mt-2 text-white/65">Havola noto'g'ri yoki egasi username ni o'zgartirgan bo'lishi mumkin.</p>
+      <a href="/" class="btn btn-primary mt-6 w-full">Bosh sahifaga o'tish</a>
+    </div>
+
+    <!-- Asosiy forma -->
+    <div id="state-form" class="hidden">
+      <div class="glass p-5 sm:p-7">
+        <div class="flex items-center gap-4">
+          <div class="ring shrink-0"><img id="avatar" alt="" class="w-14 h-14 rounded-full object-cover bg-[#1b1638] block" referrerpolicy="no-referrer"></div>
+          <div class="min-w-0">
+            <div class="text-xs text-white/50 uppercase tracking-wider font-bold">Anonim xabar</div>
+            <div id="owner-name" class="font-display font-bold text-xl truncate"></div>
+            <div id="owner-handle" class="text-sm text-white/55 truncate"></div>
+          </div>
+        </div>
+
+        <h1 class="font-display font-extrabold text-3xl sm:text-4xl leading-[1.1] mt-6">
+          Menga <span class="grad-text">ismsiz</span> yoz
+        </h1>
+        <p class="text-sm text-white/60 mt-2">Ismingni hech kim bilmaydi. Ro'yxatdan o'tish shart emas.</p>
+
+        <div id="form-wrap" class="mt-5">
+          <label for="text" class="sr-only">Xabaringiz</label>
+          <textarea id="text" rows="5" maxlength="1000" placeholder="Nima demoqchisan?"></textarea>
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <div id="chips" class="flex flex-wrap gap-2"></div>
+            <span id="counter" class="text-xs text-white/45 shrink-0 tabular-nums">0/1000</span>
+          </div>
+
+          <!-- honeypot (botlar uchun) -->
+          <div class="hp" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
+
+
+          <div id="form-error" class="hidden mt-3 text-sm text-rose-300"></div>
+          <button id="send" class="btn btn-primary w-full mt-5 text-base">Yuborish</button>
+        </div>
+
+        <div id="done" class="hidden mt-6 text-center py-4">
+          <div class="pop mx-auto w-16 h-16 rounded-full bg-emerald-400/15 border border-emerald-400/40 flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
+          </div>
+          <h2 class="font-display font-bold text-2xl mt-4">Xabar yuborildi!</h2>
+          <p id="done-note" class="text-sm text-white/60 mt-1"></p>
+          <button id="again" class="btn btn-ghost mt-6 w-full">Yana xabar yozish</button>
+        </div>
+      </div>
+
+      <!-- Javob kutilayotgan xabarlar -->
+      <section id="thread" class="hidden mt-5">
+        <h2 class="font-display font-bold text-lg mb-3 px-1">Sizning xabarlaringiz</h2>
+        <div id="thread-list" class="space-y-3" aria-live="polite"></div>
+      </section>
+
+      <div class="text-center mt-8">
+        <a href="/" class="inline-block text-sm text-white/65 hover:text-white underline underline-offset-4">✨ O'zingizning anonim havolangizni yarating</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const AVATAR_FALLBACK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+const username = decodeURIComponent(location.pathname.split("/")[2] || "").toLowerCase();
+const PROMPTS = ["Menga bir sir ayt", "Meni qanday ko'rasan?", "Nima uchun jim yuribsan?", "Eng yaxshi xotiring?"];
+
+// ---------- brauzer session_id (javob olish va bloklash uchun; shaxsni oshkor qilmaydi)
+function sessionId() {
+  try {
+    let id = localStorage.getItem("anon_sid");
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36).padEnd(10, "0")));
+      localStorage.setItem("anon_sid", id);
+    }
+    return id;
+  } catch { return window.__sid || (window.__sid = Math.random().toString(36).slice(2) + Date.now().toString(36) + "xx"); }
+}
+const SID = sessionId();
+let pollTimer = null;
+
+function toast(t) {
+  const el = $("toast"); el.textContent = t; el.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+}
+function show(id) { for (const s of ["state-loading", "state-404", "state-form"]) $(s).classList.toggle("hidden", s !== id); }
+function timeAgo(iso) {
+  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "hozir";
+  if (s < 3600) return Math.floor(s / 60) + " daqiqa oldin";
+  if (s < 86400) return Math.floor(s / 3600) + " soat oldin";
+  return new Date(iso).toLocaleDateString("uz-UZ", { day: "numeric", month: "short" });
+}
+
+// ---------- profil
+async function loadProfile() {
+  try {
+    const r = await fetch(`/api/u/${encodeURIComponent(username)}`);
+    if (!r.ok) return show("state-404");
+    const p = await r.json();
+    document.title = `${p.name} ga anonim xabar yuborish`;
+    $("owner-name").textContent = p.name;
+    $("owner-handle").textContent = "@" + p.username;
+    $("avatar").src = p.avatar_url || AVATAR_FALLBACK;
+    show("state-form");
+    loadThread();
+  } catch { show("state-404"); }
+}
+
+// ---------- forma
+$("chips").innerHTML = PROMPTS.map((p) => `<button type="button" class="chip">${esc(p)}</button>`).join("");
+$("chips").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  $("text").value = c.textContent + " "; $("text").focus(); updateCounter();
+});
+function updateCounter() { $("counter").textContent = `${$("text").value.length}/1000`; }
+$("text").addEventListener("input", updateCounter);
+
+function showError(msg) { const e = $("form-error"); e.textContent = msg; e.classList.remove("hidden"); }
+
+$("send").onclick = async () => {
+  const text = $("text").value.trim();
+  $("form-error").classList.add("hidden");
+  if (!text) return showError("Avval xabar yozing.");
+  const btn = $("send"); btn.disabled = true; btn.textContent = "Yuborilmoqda…";
+  const wants = true; // javob doim mumkin
+  try {
+    const r = await fetch(`/api/u/${encodeURIComponent(username)}/messages`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text, session_id: SID, wants_reply: wants,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+        website: $("website").value,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const d = data.detail;
+      throw new Error(typeof d === "string" ? d : "Yuborib bo'lmadi. Matnni tekshirib qayta urinib ko'ring.");
+    }
+    $("form-wrap").classList.add("hidden");
+    $("done").classList.remove("hidden");
+    $("done-note").textContent = "Egasi javob bersa, shu sahifaning pastida ko'rinadi.";
+    $("text").value = ""; updateCounter();
+    loadThread();
+  } catch (e) { showError(e.message); }
+  finally { btn.disabled = false; btn.textContent = "Yuborish"; }
+};
+$("again").onclick = () => { $("done").classList.add("hidden"); $("form-wrap").classList.remove("hidden"); $("text").focus(); };
+
+// ---------- javoblar (session_id bo'yicha)
+async function loadThread() {
+  clearTimeout(pollTimer);
+  try {
+    const r = await fetch(`/api/u/${encodeURIComponent(username)}/replies?session_id=${encodeURIComponent(SID)}`);
+    if (!r.ok) return;
+    const items = await r.json();
+    $("thread").classList.toggle("hidden", items.length === 0);
+    $("thread-list").innerHTML = items.map((m) => `
+      <article class="glass p-4 sm:p-5">
+        <p class="msg-text text-sm text-white/75">${esc(m.text)}</p>
+        <div class="text-xs text-white/40 mt-1">${esc(timeAgo(m.created_at))}</div>
+        ${m.reply_text
+          ? `<div class="mt-3 border-l-2 border-emerald-400/60 pl-3"><div class="text-emerald-300 text-xs font-bold mb-0.5">💬 Javob keldi</div><p class="msg-text">${esc(m.reply_text)}</p></div>`
+          : `<div class="mt-3 text-xs text-violet-300 font-semibold">⏳ Javob kutilmoqda…</div>`}
+      </article>`).join("");
+
+    // Javobsiz xabar bo'lsa, 10 soniyada bir tekshiramiz
+    if (items.some((m) => !m.reply_text)) pollTimer = setTimeout(loadThread, 10000);
+  } catch {}
+}
+
+loadProfile();
+</script>
+<!-- ================= QO'SHIMCHA: kirish taklifi, ovozlar, ortga tugmasi ================= -->
+<style>
+  #fx-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(6,5,18,.74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fxFade .35s ease both; }
+  #fx-overlay.fx-hide { opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #fx-card { max-width: 420px; width: 100%; padding: 28px 24px; text-align: center; animation: fxPop .45s cubic-bezier(.2,.9,.3,1.2) both; }
+  #fx-card h2 { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 1.6rem; line-height: 1.2; margin: 0 0 .5rem; color: #fff; }
+  #fx-card p { color: rgba(244,242,255,.72); font-size: .95rem; line-height: 1.5; margin: 0 0 1.4rem; }
+  #fx-card .fx-icon { font-size: 2.6rem; margin-bottom: .4rem; animation: fxBob 1.6s ease-in-out infinite; }
+  #fx-card .fx-row { display: flex; flex-direction: column-reverse; gap: .6rem; }
+  @media (min-width: 480px) { #fx-card .fx-row { flex-direction: row; justify-content: center; } }
+  .fx-btn { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .95rem; border-radius: 14px;
+    padding: .8rem 1.2rem; cursor: pointer; border: 1px solid transparent; transition: transform .15s, background .2s, box-shadow .2s; text-decoration: none; color: #fff; }
+  .fx-btn:active { transform: scale(.97); }
+  .fx-primary { background: linear-gradient(135deg, #8b5cf6, #ec4899); box-shadow: 0 10px 26px -10px rgba(236,72,153,.7); }
+  .fx-primary:hover { box-shadow: 0 14px 32px -10px rgba(236,72,153,.85); }
+  .fx-ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); }
+  .fx-ghost:hover { background: rgba(255,255,255,.14); }
+  .fx-dock { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 50; display: flex; gap: .5rem; }
+  .fx-back, .fx-sound { display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .95rem; border-radius: 999px; font-size: .85rem; font-weight: 700;
+    color: #f4f2ff; cursor: pointer; background: rgba(20,17,40,.82); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .15s, background .2s; }
+  .fx-back:hover, .fx-sound:hover { background: rgba(255,255,255,.14); }
+  .fx-back:hover { transform: translateX(-2px); }
+  .fx-back:active, .fx-sound:active { transform: scale(.96); }
+  .fx-sound { padding: .55rem .75rem; }
+  @keyframes fxFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fxPop { from { opacity: 0; transform: scale(.92) translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fxBob { 50% { transform: translateY(-4px); } }
+</style>
+
+<div class="fx-dock">
+  <button type="button" id="fx-back" class="fx-back" aria-label="Ortga">← Ortga</button>
+  <button type="button" id="fx-sound" class="fx-sound" aria-label="Ovozni yoqish yoki o'chirish">🔊</button>
+</div>
+
+<script>
+(function () {
+  var KEY = "anonqa_welcome_v1", SOUND_KEY = "anonqa_sound_off";
+  var ctx = null, welcomePlayed = false, welcomeWanted = false;
+
+  // ---------- sozlamalar ----------
+  function soundOn() { try { return localStorage.getItem(SOUND_KEY) !== "1"; } catch (e) { return true; } }
+  function setSound(on) { try { localStorage.setItem(SOUND_KEY, on ? "0" : "1"); } catch (e) {} }
+  var soundBtn = document.getElementById("fx-sound");
+  function paintSound() { soundBtn.textContent = soundOn() ? "🔊" : "🔇"; soundBtn.title = soundOn() ? "Ovoz yoqilgan" : "Ovoz o'chirilgan"; }
+  if (soundBtn) {
+    paintSound();
+    soundBtn.addEventListener("click", function () { setSound(!soundOn()); paintSound(); });
+  }
+
+  // ---------- ovoz (Web Audio) ----------
+  function audio() {
+    try {
+      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
+  }
+  function tone(freq, dur, type, vol, when) {
+    if (!soundOn()) return;
+    var c = audio(); if (!c) return;
+    var t = c.currentTime + (when || 0);
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function clickSfx() {
+    tone(880, 0.08, "triangle", 0.05, 0);
+    tone(1320, 0.05, "sine", 0.03, 0.02);
+  }
+
+  // ---------- o'zbekcha ovoz ----------
+  function pickVoice() {
+    if (!("speechSynthesis" in window)) return null;
+    var list = speechSynthesis.getVoices() || [];
+    // Avval o'zbek, bo'lmasa o'zbekchaga eng yaqin til (turk) ovozi
+    return list.find(function (v) { return /^uz/i.test(v.lang); })
+        || list.find(function (v) { return /^tr/i.test(v.lang); })
+        || null;
+  }
+  function speak(text) {
+    if (!soundOn() || !("speechSynthesis" in window)) return;
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      var v = pickVoice();
+      u.lang = v ? v.lang : "uz-UZ";
+      if (v) u.voice = v;
+      u.rate = 0.9; u.pitch = 1.05; u.volume = 1;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = function () {};
+
+  function playWelcome() {
+    if (welcomePlayed || !soundOn()) return;
+    var c = audio();
+    if (!c || c.state !== "running") return; // brauzer ruxsat bermagan: foydalanuvchi bosishini kutamiz
+    welcomePlayed = true;
+    tone(523.25, 0.25, "sine", 0.08, 0);
+    tone(659.25, 0.25, "sine", 0.08, 0.15);
+    tone(783.99, 0.45, "sine", 0.08, 0.3);
+    setTimeout(function () { speak("Salom! Saytimizga xush kelibsiz!"); }, 700);
+  }
+
+  // Birinchi foydalanuvchi harakatida ovozni ijro etish (brauzer talabi)
+  function onGesture() {
+    if (!welcomeWanted || welcomePlayed) return;
+    audio();
+    setTimeout(playWelcome, 80);
+  }
+  document.addEventListener("pointerdown", onGesture, true);
+  document.addEventListener("keydown", onGesture, true);
+
+  // Har bir tugma bosilganda sfx
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t && t.closest && t.closest("button, a, .btn, .chip, .switch, [role=button]")) clickSfx();
+  }, true);
+
+  // ---------- ortga tugmasi ----------
+  // Faqat sayt ichidagi oldingi sahifaga qaytadi; tashqaridan kelgan bo'lsa bosh sahifaga
+  function goBack() {
+    var sameSite = false;
+    try { sameSite = !!document.referrer && new URL(document.referrer).host === location.host; } catch (e) {}
+    if (sameSite && history.length > 1) history.back();
+    else location.href = "/";
+  }
+  var back = document.getElementById("fx-back");
+  if (back) back.addEventListener("click", goBack);
+
+  // ---------- birinchi kirish taklifi ----------
+  function seen() { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } }
+  function markSeen() { try { localStorage.setItem(KEY, "1"); } catch (e) {} }
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+  function closeOverlay(ov) {
+    markSeen();
+    ov.classList.add("fx-hide");
+    setTimeout(function () { ov.remove(); }, 260);
+  }
+
+  function stepApk(ui, done) {
+    ui.card.innerHTML = "";
+    ui.card.appendChild(el("div", "fx-icon", "📲"));
+    ui.card.appendChild(el("h2", "", "Saytimizga xush kelibsiz!"));
+    ui.card.appendChild(el("p", "", "Android ilovasini yuklab olasizmi?"));
+    var row = el("div", "fx-row");
+    var no = el("button", "fx-btn fx-ghost", "Yo'q"); no.type = "button";
+    var yes = el("button", "fx-btn fx-primary", "Ha"); yes.type = "button";
+    no.onclick = function () { done(false); };
+    yes.onclick = function () {
+      var f = document.createElement("iframe");
+      f.style.display = "none"; f.src = "/download/apk";
+      document.body.appendChild(f);
+      setTimeout(function () { f.remove(); }, 60000);
+      done(true);
+    };
+    row.appendChild(no); row.appendChild(yes);
+    ui.card.appendChild(row);
+  }
+
+  function stepGoogle(ui, apkTaken) {
+    ui.card.innerHTML = "";
+    ui.card.appendChild(el("div", "fx-icon", "🔐"));
+    ui.card.appendChild(el("h2", "", "Davom etamizmi?"));
+    ui.card.appendChild(el("p", "", apkTaken
+      ? "APK yuklab olindi. Endi Google orqali kirib, o'zingizning anonim havolangizni yarating."
+      : "Google orqali kirib, o'zingizning anonim havolangizni yarating."));
+    var row = el("div", "fx-row");
+    var later = el("button", "fx-btn fx-ghost", "Keyinroq"); later.type = "button";
+    later.onclick = function () { closeOverlay(ui.ov); };
+    var go = el("a", "fx-btn fx-primary", "Google bilan davom etish");
+    go.href = "/auth/login";
+    go.onclick = function () { markSeen(); };
+    row.appendChild(later); row.appendChild(go);
+    ui.card.appendChild(row);
+  }
+
+  function showWelcome(apkOk, loggedIn) {
+    var ov = el("div"); ov.id = "fx-overlay";
+    var card = el("div", "glass"); card.id = "fx-card";
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    var ui = { ov: ov, card: card };
+
+    welcomeWanted = true;
+    playWelcome(); // brauzer ruxsat bersa, darhol ijro etiladi
+
+    if (apkOk) {
+      stepApk(ui, function (downloaded) {
+        if (loggedIn) closeOverlay(ov); else stepGoogle(ui, downloaded);
+      });
+    } else {
+      stepGoogle(ui, false);
+    }
+  }
+
+  function init() {
+    Promise.all([
+      fetch("/api/app").then(function (r) { return r.json(); }).catch(function () { return {}; }),
+      fetch("/me", { credentials: "same-origin" }).then(function (r) { return r.ok; }).catch(function () { return false; })
+    ]).then(function (res) {
+      var apkOk = !!(res[0] && res[0].apk_available);
+      var loggedIn = !!res[1];
+      if (seen()) return;
+      if (!apkOk && loggedIn) return;
+      showWelcome(apkOk, loggedIn);
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+
+</body>
+</html>
